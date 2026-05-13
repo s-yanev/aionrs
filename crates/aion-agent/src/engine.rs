@@ -10,6 +10,7 @@ use aion_tools::registry::ToolRegistry;
 use aion_types::llm::{LlmEvent, LlmRequest};
 use aion_types::message::{ContentBlock, Message, Role, StopReason, TokenUsage};
 use aion_types::skill_types::{ContextModifier, PlanModeTransition, effort_to_string};
+use tracing::Instrument;
 
 use crate::cache_diagnostics::{CacheBreakDetector, CacheDiagnostic, CacheStats};
 use crate::compact::state::CompactState;
@@ -221,6 +222,7 @@ impl AgentEngine {
     ) -> anyhow::Result<()> {
         if let Some(mgr) = &self.session_manager {
             let session = mgr.create(provider_name, &self.model, cwd, session_id)?;
+            tracing::info!(target: "aion_agent", session_id = %session.id, provider = %provider_name, model = %self.model, "session started");
             self.current_session = Some(session);
         }
         Ok(())
@@ -351,6 +353,25 @@ impl AgentEngine {
 
     /// Run the agent loop with user input
     pub async fn run(&mut self, user_input: &str, msg_id: &str) -> Result<AgentResult, AgentError> {
+        let session_id = self
+            .current_session
+            .as_ref()
+            .map(|s| s.id.clone())
+            .unwrap_or_default();
+        let span = tracing::info_span!(
+            target: "aion_agent",
+            "agent_run",
+            session_id = %session_id,
+            msg_id = %msg_id,
+        );
+        self.run_inner(user_input, msg_id).instrument(span).await
+    }
+
+    async fn run_inner(
+        &mut self,
+        user_input: &str,
+        msg_id: &str,
+    ) -> Result<AgentResult, AgentError> {
         self.current_msg_id = msg_id.to_string();
         self.output.emit_stream_start(msg_id);
         self.messages.push(Message::now(
@@ -640,6 +661,7 @@ impl AgentEngine {
         let should_compact =
             auto::should_autocompact(self.compact_state.last_input_tokens, &self.compact_config);
         if should_compact {
+            tracing::info!(target: "aion_agent", last_input_tokens = self.compact_state.last_input_tokens, "context compaction triggered");
             let threshold = if let Some(pct) = self.compact_config.autocompact_threshold_pct {
                 let t = self.compact_config.context_window * pct as usize / 100;
                 self.output.emit_info(&format!(
@@ -730,7 +752,7 @@ impl AgentEngine {
         if let Some(hook_engine) = &self.hooks {
             let messages = hook_engine.run_stop().await;
             for msg in messages {
-                eprintln!("{}", msg);
+                tracing::info!(target: "aion_agent", hook_message = %msg, "stop hook output");
             }
         }
     }

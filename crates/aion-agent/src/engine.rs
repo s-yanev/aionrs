@@ -345,12 +345,10 @@ impl AgentEngine {
 
         self.msg_id = msg_id.to_string();
         self.output.emit_stream_start(msg_id);
-        self.messages.push(Message::now(
-            Role::User,
-            vec![ContentBlock::Text {
-                text: user_input.to_string(),
-            }],
-        ));
+
+        // Parse [[AION_FILES]] marker and create proper content blocks
+        let content_blocks = self.parse_user_input_with_images(user_input);
+        self.messages.push(Message::now(Role::User, content_blocks));
 
         let mut guards = TurnGuards::new(
             self.max_turns_per_run,
@@ -1259,6 +1257,55 @@ fn parse_command_input(input: &str) -> Option<ParsedSlashCommand<'_>> {
         name,
         args,
     })
+}
+
+impl AgentEngine {
+    /// Parse user input that may contain [[AION_FILES]] marker with file paths
+    /// and convert it to proper content blocks (text + images).
+    fn parse_user_input_with_images(&self, user_input: &str) -> Vec<ContentBlock> {
+        const AION_FILES_MARKER: &str = "[[AION_FILES]]";
+
+        if !user_input.contains(AION_FILES_MARKER) {
+            // No files marker, just return as text
+            return vec![ContentBlock::Text {
+                text: user_input.to_string(),
+            }];
+        }
+
+        // Split content at the marker
+        let parts: Vec<&str> = user_input.splitn(2, AION_FILES_MARKER).collect();
+        let text_part = parts[0].trim();
+        let files_part = if parts.len() > 1 { parts[1].trim() } else { "" };
+
+        let mut content_blocks = Vec::new();
+
+        // Add text part if non-empty
+        if !text_part.is_empty() {
+            content_blocks.push(ContentBlock::Text {
+                text: text_part.to_string(),
+            });
+        }
+
+        // Parse file paths (one per line)
+        for file_path in files_part.lines() {
+            let file_path = file_path.trim();
+            if file_path.is_empty() {
+                continue;
+            }
+
+            // Check if it's a data URI (already base64 encoded)
+            if file_path.starts_with("data:") {
+                content_blocks.push(ContentBlock::Image {
+                    image_url: aion_types::message::ImageUrl {
+                        url: file_path.to_string(),
+                    },
+                });
+            }
+            // Otherwise, it's a file path - skip it (should have been converted already)
+        }
+
+        content_blocks
+    }
 }
 
 #[cfg(test)]

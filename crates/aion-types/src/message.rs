@@ -13,6 +13,12 @@ pub enum ContentBlock {
     #[serde(rename = "text")]
     Text { text: String },
 
+    /// An image content block (base64 encoded data URI)
+    #[serde(rename = "image_url")]
+    Image {
+        image_url: ImageUrl,
+    },
+
     /// A tool invocation from the assistant
     #[serde(rename = "tool_use")]
     ToolUse {
@@ -42,6 +48,12 @@ pub enum ContentBlock {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         signature: Option<String>,
     },
+}
+
+/// Image URL for content blocks
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImageUrl {
+    pub url: String,
 }
 
 /// A message in the conversation

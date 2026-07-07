@@ -28,6 +28,10 @@ pub fn estimate_tokens_from_messages(messages: &[Message]) -> u64 {
                 ContentBlock::ToolResult { content, .. } => {
                     total_chars += content.len();
                 }
+                ContentBlock::Image { image_url } => {
+                    // Estimate tokens for base64 image data (rough estimate)
+                    total_chars += image_url.url.len();
+                }
             }
         }
     }

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/iOfficeAI/aionrs/compare/v0.2.0...v0.2.1) (2026-07-08)
+
+
+### Features
+
+* **providers:** preserve response body on 429 rate-limit errors ([52aade8](https://github.com/iOfficeAI/aionrs/commit/52aade888d5916db563d66beda3a5a5b68b05e7b))
+* **providers:** preserve response body on 429 rate-limit errors ([f2a2fb1](https://github.com/iOfficeAI/aionrs/commit/f2a2fb1e36ffb953e4c5f286f22aa5a2f6ed2100))
+
 ## [0.2.0](https://github.com/iOfficeAI/aionrs/compare/v0.1.38...v0.2.0) (2026-07-07)
 
 

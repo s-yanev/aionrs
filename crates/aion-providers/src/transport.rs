@@ -149,9 +149,9 @@ impl ProviderTransport {
 
     pub(crate) fn retry_policy(&self) -> RetryPolicy {
         match self {
-            Self::OpenAi(_) => RetryPolicy::new(MAX_STREAM_RETRIES, true, true),
-            Self::Anthropic(_) | Self::Vertex(_) => RetryPolicy::new(MAX_STREAM_RETRIES, false, true),
-            Self::Bedrock(_) => RetryPolicy::new(0, false, false),
+            Self::OpenAi(_) => RetryPolicy::new(MAX_STREAM_RETRIES, true, true, true),
+            Self::Anthropic(_) | Self::Vertex(_) => RetryPolicy::new(MAX_STREAM_RETRIES, false, true, true),
+            Self::Bedrock(_) => RetryPolicy::new(0, false, false, true),
         }
     }
 

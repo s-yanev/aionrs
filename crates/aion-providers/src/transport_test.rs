@@ -161,7 +161,7 @@ mod tests {
             .expect("request body projection should succeed");
 
         assert_eq!(transport.wire_protocol(), WireProtocol::AnthropicMessages);
-        assert_eq!(transport.retry_policy(), RetryPolicy::new(0, false, false));
+        assert_eq!(transport.retry_policy(), RetryPolicy::new(0, false, false, true));
         assert_eq!(tool_wire_shape, ResolvedToolWireShape::AnthropicInputSchema);
         assert_eq!(body["anthropic_version"], "bedrock-2023-05-31");
         assert!(body.get("model").is_none());

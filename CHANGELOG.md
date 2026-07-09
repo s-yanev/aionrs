@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.2](https://github.com/iOfficeAI/aionrs/compare/v0.2.1...v0.2.2) (2026-07-09)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate getrandom to 0.4 ([c78cbcf](https://github.com/iOfficeAI/aionrs/commit/c78cbcf8ac94d7b523e23a0b0f34d21b3fbbaaa8))
+* **deps:** update rust crate getrandom to 0.4 ([37666d3](https://github.com/iOfficeAI/aionrs/commit/37666d3379273fc599633610f63c83d249806a5b))
+* **deps:** update rust crate getrandom to 0.4 ([#193](https://github.com/iOfficeAI/aionrs/issues/193)) ([2a02775](https://github.com/iOfficeAI/aionrs/commit/2a027756269ffbf8328a3cf5906356482f8966fa))
+* honor compat max token defaults ([77029c3](https://github.com/iOfficeAI/aionrs/commit/77029c396be5f666fa3f782235af86e676e303ed))
+* make max tokens optional by provider ([6f2f8ad](https://github.com/iOfficeAI/aionrs/commit/6f2f8adb9fbb5f20af95710ba42d3ade4333a085))
+* **providers:** retry initial provider 5xx responses ([618f3ee](https://github.com/iOfficeAI/aionrs/commit/618f3eecb1a81aab04c5cc5ae62c091e9b0a2fd4))
+* **providers:** retry initial provider 5xx responses ([9c9b7ec](https://github.com/iOfficeAI/aionrs/commit/9c9b7ec2612d12498bdbf0d7e92c9513694d85ed))
+* **provider:** support OpenAI-compatible thinking and chat paths ([#203](https://github.com/iOfficeAI/aionrs/issues/203)) ([6a05d5a](https://github.com/iOfficeAI/aionrs/commit/6a05d5adfc3c106b8704d410c64acda3043d663d))
+* remove duplicate aws smithy lock entry ([f807a15](https://github.com/iOfficeAI/aionrs/commit/f807a157174e7f5d7c3d30409ee7132bb2cfdee0))
+* remove redundant compat default update ([b3ec51f](https://github.com/iOfficeAI/aionrs/commit/b3ec51fe7f8e98b3e29b18219b5c895a7bf3e22d))
+
+
+### Documentation
+
+* add aionrs code standards ([#214](https://github.com/iOfficeAI/aionrs/issues/214)) ([5d0eae1](https://github.com/iOfficeAI/aionrs/commit/5d0eae1cc0f5d901d627d16e7247261bebeec500))
+
 ## [0.2.1](https://github.com/iOfficeAI/aionrs/compare/v0.2.0...v0.2.1) (2026-07-08)
 
 

@@ -10,6 +10,7 @@ use crate::openai_messages::generate_call_id;
 use crate::transport::{OpenAiTransport, ProviderTransport};
 use crate::{LlmProvider, ProviderError};
 use aion_config::compat::ProviderCompat;
+use aion_config::config::ProviderType;
 
 pub struct OpenAIProvider {
     inner: ComposedProvider,
@@ -28,6 +29,10 @@ impl OpenAIProvider {
 impl LlmProvider for OpenAIProvider {
     async fn stream(&self, request: &LlmRequest) -> Result<mpsc::Receiver<LlmEvent>, ProviderError> {
         self.inner.stream(request).await
+    }
+
+    fn provider_type(&self) -> ProviderType {
+        ProviderType::OpenAI
     }
 }
 

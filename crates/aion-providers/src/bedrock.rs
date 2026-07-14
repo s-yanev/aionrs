@@ -49,6 +49,10 @@ impl LlmProvider for BedrockProvider {
     async fn stream(&self, request: &LlmRequest) -> Result<mpsc::Receiver<LlmEvent>, ProviderError> {
         self.inner.stream(request).await
     }
+
+    fn provider_type(&self) -> aion_config::config::ProviderType {
+        aion_config::config::ProviderType::Bedrock
+    }
 }
 
 #[derive(Debug, Clone)]

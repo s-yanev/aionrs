@@ -4,6 +4,7 @@ use super::*;
 mod tests {
     use std::sync::Arc;
 
+    use aion_config::config::ProviderType;
     use aion_providers::{LlmProvider, ProviderError};
     use aion_types::llm::{LlmEvent, LlmRequest};
     use aion_types::message::{ContentBlock, Message, Role};
@@ -18,6 +19,10 @@ mod tests {
         async fn stream(&self, _: &LlmRequest) -> Result<tokio::sync::mpsc::Receiver<LlmEvent>, ProviderError> {
             let (_tx, rx) = tokio::sync::mpsc::channel(1);
             Ok(rx)
+        }
+
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
         }
     }
 

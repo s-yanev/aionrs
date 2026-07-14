@@ -113,6 +113,9 @@ impl LlmProvider for MockLlmProvider {
         });
         Ok(rx)
     }
+    fn provider_type(&self) -> ProviderType {
+        ProviderType::Anthropic
+    }
 }
 
 // ---------------------------------------------------------------------------

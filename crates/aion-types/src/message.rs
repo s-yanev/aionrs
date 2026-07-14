@@ -168,6 +168,37 @@ pub enum Role {
     Tool,
 }
 
+/// Resolved support for image input for the configured model/provider.
+///
+/// This is intentionally coarse-grained: the aionrs engine does not own a
+/// model catalog, but it needs a clear contract at its public boundary so that
+/// unsupported image input is rejected before provider projection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ImageInputCapability {
+    /// The model is known to accept image input.
+    Supported,
+    /// The model is known not to accept image input.
+    #[default]
+    Unsupported,
+    /// It is not known whether the model accepts image input.
+    Unknown,
+}
+
+impl ImageInputCapability {
+    /// Whether image blocks may be forwarded for this capability.
+    ///
+    /// Unknown is treated as unsupported unless the caller explicitly opts in
+    /// via an override.
+    pub fn allows_images(self, override_to_supported: bool) -> bool {
+        match self {
+            Self::Supported => true,
+            Self::Unsupported => false,
+            Self::Unknown => override_to_supported,
+        }
+    }
+}
+
 /// Why the model stopped generating
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StopReason {

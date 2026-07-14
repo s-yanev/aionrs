@@ -1,3 +1,4 @@
+use aion_config::config::ProviderType;
 mod common;
 
 use std::sync::{Arc, Mutex};
@@ -130,6 +131,9 @@ impl LlmProvider for RecordingRequestProvider {
         });
         Ok(rx)
     }
+    fn provider_type(&self) -> ProviderType {
+        ProviderType::Anthropic
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -171,6 +175,9 @@ impl LlmProvider for FullRecordingRequestProvider {
             }
         });
         Ok(rx)
+    }
+    fn provider_type(&self) -> ProviderType {
+        ProviderType::Anthropic
     }
 }
 

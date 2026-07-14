@@ -17,6 +17,12 @@ use crate::vertex;
 #[async_trait]
 pub trait LlmProvider: Send + Sync {
     async fn stream(&self, request: &LlmRequest) -> Result<mpsc::Receiver<LlmEvent>, ProviderError>;
+
+    /// Return the provider family type for capability checks.
+    ///
+    /// This is used by the agent engine to apply coarse, provider-family-level
+    /// defaults when the host has not supplied a per-model capability override.
+    fn provider_type(&self) -> ProviderType;
 }
 
 /// Create a provider from resolved config

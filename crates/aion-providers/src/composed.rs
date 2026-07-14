@@ -52,6 +52,10 @@ impl LlmProvider for ComposedProvider {
 
         run_stream(send, process, retry_policy).await
     }
+
+    fn provider_type(&self) -> aion_config::config::ProviderType {
+        self.transport.provider_type()
+    }
 }
 
 #[cfg(test)]

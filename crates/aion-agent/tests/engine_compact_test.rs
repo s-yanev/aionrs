@@ -18,6 +18,7 @@ use aion_agent::output::OutputSink;
 use aion_agent::output::terminal::TerminalSink;
 use aion_agent::session::SessionManager;
 use aion_config::compact::CompactConfig;
+use aion_config::config::ProviderType;
 use aion_providers::{LlmProvider, ProviderError};
 use aion_tools::registry::ToolRegistry;
 use aion_types::llm::{LlmEvent, LlmRequest};
@@ -70,6 +71,9 @@ impl LlmProvider for CompactMockProvider {
             }
         });
         Ok(rx)
+    }
+    fn provider_type(&self) -> ProviderType {
+        ProviderType::Anthropic
     }
 }
 
@@ -498,6 +502,9 @@ async fn tc_2_6_02_micro_before_auto_execution_order() {
             });
             Ok(rx)
         }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
+        }
     }
 
     let provider = Arc::new(OrderProvider {
@@ -646,6 +653,9 @@ async fn tc_2_6_e2e_02_micro_and_auto_cooperative() {
             });
             Ok(rx)
         }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
+        }
     }
 
     let provider = Arc::new(CoopProvider {
@@ -761,6 +771,9 @@ async fn tc_2_6_e2e_03_circuit_breaker_stops_retries() {
                 }
             });
             Ok(rx)
+        }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
         }
     }
 

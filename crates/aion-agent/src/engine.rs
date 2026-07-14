@@ -34,7 +34,7 @@ use aion_protocol::writer::ProtocolEmitter;
 use aion_providers::provider::{LlmProvider, create_provider};
 use aion_tools::registry::ToolRegistry;
 use aion_types::llm::{LlmEvent, LlmRequest, ThinkingConfig};
-use aion_types::message::{ContentBlock, Message, Role, StopReason, TokenUsage};
+use aion_types::message::{ContentBlock, ImageInputCapability, Message, Role, StopReason, TokenUsage};
 use aion_types::skill_types::{ContextModifier, PlanModeTransition, effort_to_string};
 use anyhow::{Error as AnyhowError, Result as AnyhowResult};
 use chrono::Utc;
@@ -346,11 +346,38 @@ impl AgentEngine {
     /// This is the host-integration entry point for multimodal input such as
     /// text and images. No marker parsing or slash-command interception is
     /// performed.
+    ///
+    /// # Capability validation
+    ///
+    /// If `content_blocks` contains any `ContentBlock::Image` and the configured
+    /// model's `image_input` capability is not `Supported`, this method returns
+    /// `AgentError::ImageInputUnsupported` before any provider request is made.
+    /// Unknown capabilities are treated as unsupported unless the
+    /// `AION_ALLOW_UNKNOWN_IMAGE_INPUT` environment variable is set to `1`/`true`.
     pub async fn run_with_blocks(
         &mut self,
         content_blocks: Vec<ContentBlock>,
         msg_id: &str,
     ) -> Result<AgentResult, AgentError> {
+        if content_blocks.iter().any(|b| matches!(b, ContentBlock::Image { .. })) {
+            let capability = self.image_input_capability();
+            let override_unknown = std::env::var("AION_ALLOW_UNKNOWN_IMAGE_INPUT")
+                .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false);
+            if !capability.allows_images(override_unknown) {
+                warn!(
+                    target: "aion_agent",
+                    model = %self.model,
+                    capability = ?capability,
+                    override_unknown,
+                    "rejecting run_with_blocks because model does not support image input"
+                );
+                return Err(AgentError::ImageInputUnsupported {
+                    model: self.model.clone(),
+                });
+            }
+        }
+
         let session_id = self.current_session.as_ref().map(|s| s.id.clone()).unwrap_or_default();
         let span = info_span!(
             target: "aion_agent",
@@ -359,6 +386,22 @@ impl AgentEngine {
             msg_id = %msg_id,
         );
         self.run_inner(content_blocks, msg_id).instrument(span).await
+    }
+
+    /// Resolved image-input capability for the current model.
+    ///
+    /// This is a coarse, provider-family-level default. Hosts that own a model
+    /// catalog can override the capability by setting `image_input` in the
+    /// provider compatibility config.
+    fn image_input_capability(&self) -> ImageInputCapability {
+        self.compat
+            .image_input
+            .unwrap_or_else(|| match self.provider.provider_type() {
+                aion_config::config::ProviderType::Anthropic
+                | aion_config::config::ProviderType::Bedrock
+                | aion_config::config::ProviderType::Vertex => ImageInputCapability::Supported,
+                aion_config::config::ProviderType::OpenAI => ImageInputCapability::Unknown,
+            })
     }
 
     async fn run_inner(&mut self, content_blocks: Vec<ContentBlock>, msg_id: &str) -> Result<AgentResult, AgentError> {

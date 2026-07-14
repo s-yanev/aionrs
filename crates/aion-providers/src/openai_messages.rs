@@ -83,6 +83,17 @@ pub(crate) fn build_messages(messages: &[Message], system: &str, compat: &Provid
                                     }
                                 }
                                 ContentBlock::Image { image_url } => {
+                                    // Validate at the provider boundary so invalid data URIs are
+                                    // rejected consistently instead of forwarded as-is to the API.
+                                    if let Err(e) = image_url.validate() {
+                                        tracing::warn!(
+                                            target: "aion_providers",
+                                            error = %e,
+                                            url_prefix = %image_url.url.chars().take(40).collect::<String>(),
+                                            "skipping invalid image block in OpenAI projection"
+                                        );
+                                        continue;
+                                    }
                                     content_array.push(json!({
                                         "type": "image_url",
                                         "image_url": {

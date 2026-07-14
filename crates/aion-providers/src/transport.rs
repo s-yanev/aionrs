@@ -139,6 +139,15 @@ impl AnthropicTransport {
 }
 
 impl ProviderTransport {
+    pub(crate) fn provider_type(&self) -> aion_config::config::ProviderType {
+        match self {
+            Self::OpenAi(_) => aion_config::config::ProviderType::OpenAI,
+            Self::Anthropic(_) => aion_config::config::ProviderType::Anthropic,
+            Self::Vertex(_) => aion_config::config::ProviderType::Vertex,
+            Self::Bedrock(_) => aion_config::config::ProviderType::Bedrock,
+        }
+    }
+
     #[cfg(test)]
     pub(crate) fn wire_protocol(&self) -> WireProtocol {
         match self {

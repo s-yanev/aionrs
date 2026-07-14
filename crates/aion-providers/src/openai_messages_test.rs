@@ -710,7 +710,7 @@ mod tests {
     #[test]
     fn test_build_messages_image_serializes_as_content_array() {
         let data = base64::engine::general_purpose::STANDARD.encode(b"fake-image");
-        let url = format!("data:image/png;base64, {}", data);
+        let url = format!("data:image/png;base64,{}", data);
         let messages = vec![Message::new(
             Role::User,
             vec![

@@ -9,6 +9,7 @@ use crate::composed::ComposedProvider;
 use crate::transport::{AnthropicTransport, ProviderTransport};
 use crate::{LlmProvider, ProviderError};
 use aion_config::compat::ProviderCompat;
+use aion_config::config::ProviderType;
 
 pub struct AnthropicProvider {
     inner: ComposedProvider,
@@ -53,6 +54,10 @@ impl AnthropicProvider {
 impl LlmProvider for AnthropicProvider {
     async fn stream(&self, request: &LlmRequest) -> Result<mpsc::Receiver<LlmEvent>, ProviderError> {
         self.inner.stream(request).await
+    }
+
+    fn provider_type(&self) -> ProviderType {
+        ProviderType::Anthropic
     }
 }
 

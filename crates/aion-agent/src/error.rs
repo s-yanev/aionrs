@@ -18,4 +18,6 @@ pub enum AgentError {
     UserAborted,
     #[error("Context window nearly full ({input_tokens} tokens used, limit {limit})")]
     ContextTooLong { input_tokens: u64, limit: usize },
+    #[error("Model '{model}' does not support image input")]
+    ImageInputUnsupported { model: String },
 }

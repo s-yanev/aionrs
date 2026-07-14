@@ -9,6 +9,7 @@ use super::{
 
 #[cfg(test)]
 mod tests_set_config {
+    use aion_config::config::ProviderType;
     use std::sync::{Arc, Mutex};
 
     use aion_config::compat::ReasoningCompat;
@@ -39,6 +40,9 @@ mod tests_set_config {
         async fn stream(&self, _: &LlmRequest) -> Result<tokio::sync::mpsc::Receiver<LlmEvent>, ProviderError> {
             let (_tx, rx) = tokio::sync::mpsc::channel(1);
             Ok(rx)
+        }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
         }
     }
 
@@ -324,6 +328,7 @@ mod tests_set_config {
 
 #[cfg(test)]
 mod tests_phase6 {
+    use aion_config::config::ProviderType;
     use std::sync::{Arc, Mutex};
 
     use aion_providers::error::ProviderError;
@@ -354,6 +359,9 @@ mod tests_phase6 {
         async fn stream(&self, _: &LlmRequest) -> Result<tokio::sync::mpsc::Receiver<LlmEvent>, ProviderError> {
             let (_tx, rx) = tokio::sync::mpsc::channel(1);
             Ok(rx)
+        }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
         }
     }
 
@@ -517,6 +525,7 @@ mod tests_phase6 {
 
 #[cfg(test)]
 mod tests_compact {
+    use aion_config::config::ProviderType;
     use std::sync::{Arc, Mutex};
 
     use aion_config::compact::CompactConfig;
@@ -581,6 +590,9 @@ mod tests_compact {
         async fn stream(&self, _: &LlmRequest) -> Result<tokio::sync::mpsc::Receiver<LlmEvent>, ProviderError> {
             let (_tx, rx) = tokio::sync::mpsc::channel(1);
             Ok(rx)
+        }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
         }
     }
 
@@ -926,6 +938,7 @@ mod tests_compact {
 
 #[cfg(test)]
 mod tests_plan_mode {
+    use aion_config::config::ProviderType;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex};
 
@@ -959,6 +972,9 @@ mod tests_plan_mode {
         async fn stream(&self, _: &LlmRequest) -> Result<tokio::sync::mpsc::Receiver<LlmEvent>, ProviderError> {
             let (_tx, rx) = tokio::sync::mpsc::channel(1);
             Ok(rx)
+        }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
         }
     }
 
@@ -1136,6 +1152,7 @@ mod tests_plan_mode {
 
 #[cfg(test)]
 mod tests_handle_command {
+    use aion_config::config::ProviderType;
     use std::sync::{Arc, Mutex};
 
     use aion_providers::error::ProviderError;
@@ -1167,6 +1184,9 @@ mod tests_handle_command {
         async fn stream(&self, _: &LlmRequest) -> Result<tokio::sync::mpsc::Receiver<LlmEvent>, ProviderError> {
             let (_tx, rx) = tokio::sync::mpsc::channel(1);
             Ok(rx)
+        }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
         }
     }
 
@@ -1292,6 +1312,8 @@ mod tests_handle_command {
     // --- run() text-only behavior ---
 
     struct SingleResponseProvider;
+    struct OpenAiFamilyProvider;
+
     #[async_trait::async_trait]
     impl LlmProvider for SingleResponseProvider {
         async fn stream(&self, _: &LlmRequest) -> Result<tokio::sync::mpsc::Receiver<LlmEvent>, ProviderError> {
@@ -1304,6 +1326,21 @@ mod tests_handle_command {
                 })
                 .await;
             Ok(rx)
+        }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl LlmProvider for OpenAiFamilyProvider {
+        async fn stream(&self, _: &LlmRequest) -> Result<tokio::sync::mpsc::Receiver<LlmEvent>, ProviderError> {
+            let (_tx, rx) = tokio::sync::mpsc::channel(1);
+            Ok(rx)
+        }
+
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::OpenAI
         }
     }
 
@@ -1334,7 +1371,13 @@ mod tests_handle_command {
 
     #[tokio::test]
     async fn run_with_blocks_accepts_image_blocks() {
+        // Kept for backward-compat naming; expanded below.
+    }
+
+    #[tokio::test]
+    async fn run_with_blocks_accepts_image_blocks_for_supported_provider() {
         let mut engine = make_engine_with_provider(Arc::new(SingleResponseProvider));
+        engine.compat.image_input = Some(aion_types::message::ImageInputCapability::Supported);
         let blocks = vec![
             ContentBlock::Text {
                 text: "look at this".to_string(),
@@ -1355,6 +1398,78 @@ mod tests_handle_command {
         assert_eq!(user_msg.content.len(), 2);
         assert!(matches!(user_msg.content[0], ContentBlock::Text { .. }));
         assert!(matches!(user_msg.content[1], ContentBlock::Image { .. }));
+    }
+
+    #[tokio::test]
+    async fn run_with_blocks_rejects_image_blocks_for_unsupported_provider() {
+        let mut engine = make_engine_with_provider(Arc::new(SingleResponseProvider));
+        engine.compat.image_input = Some(aion_types::message::ImageInputCapability::Unsupported);
+        let blocks = vec![ContentBlock::Image {
+            image_url: aion_types::message::ImageUrl {
+                url: "data:image/png;base64,abcd".to_string(),
+            },
+        }];
+        let err = engine.run_with_blocks(blocks, "msg-3").await.unwrap_err();
+        match err {
+            super::AgentError::ImageInputUnsupported { model } => assert_eq!(model, "test-model"),
+            other => panic!("expected ImageInputUnsupported, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn run_with_blocks_unknown_capability_rejects_images_by_default() {
+        // Use an OpenAI-family provider so the engine defaults to Unknown.
+        let mut engine = make_engine_with_provider(Arc::new(OpenAiFamilyProvider));
+        let blocks = vec![ContentBlock::Image {
+            image_url: aion_types::message::ImageUrl {
+                url: "data:image/png;base64,abcd".to_string(),
+            },
+        }];
+        let err = engine.run_with_blocks(blocks, "msg-4").await.unwrap_err();
+        assert!(matches!(err, super::AgentError::ImageInputUnsupported { .. }));
+    }
+
+    #[tokio::test]
+    async fn run_with_blocks_openai_family_defaults_unknown_and_rejects_images() {
+        // Use the OpenAI-family provider directly so make_engine() does not inherit
+        // any previous provider's compat override.
+        let mut engine = make_engine_with_provider(Arc::new(OpenAiFamilyProvider));
+        let blocks = vec![ContentBlock::Image {
+            image_url: aion_types::message::ImageUrl {
+                url: "data:image/png;base64,abcd".to_string(),
+            },
+        }];
+        let err = engine.run_with_blocks(blocks, "msg-6").await.unwrap_err();
+        assert!(matches!(err, super::AgentError::ImageInputUnsupported { .. }));
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn run_with_blocks_unknown_capability_allows_images_with_override() {
+        let mut engine = make_engine_with_provider(Arc::new(SingleResponseProvider));
+        // Force Unknown so the environment variable actually decides the outcome.
+        engine.compat.image_input = Some(aion_types::message::ImageInputCapability::Unknown);
+        unsafe {
+            std::env::set_var("AION_ALLOW_UNKNOWN_IMAGE_INPUT", "1");
+        }
+        let blocks = vec![ContentBlock::Image {
+            image_url: aion_types::message::ImageUrl {
+                url: "data:image/png;base64,abcd".to_string(),
+            },
+        }];
+        let _ = engine.run_with_blocks(blocks, "msg-5").await;
+        unsafe {
+            std::env::remove_var("AION_ALLOW_UNKNOWN_IMAGE_INPUT");
+        }
+
+        let user_msg = engine
+            .messages
+            .iter()
+            .find(|m| m.role == Role::User)
+            .expect("user message");
+        assert_eq!(user_msg.content.len(), 1);
+        assert!(matches!(user_msg.content[0], ContentBlock::Image { .. }));
     }
 }
 

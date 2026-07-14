@@ -1,3 +1,4 @@
+use aion_config::config::ProviderType;
 mod common;
 
 use std::sync::{Arc, Mutex};
@@ -207,6 +208,9 @@ impl LlmProvider for CapturingProvider {
     async fn stream(&self, request: &LlmRequest) -> Result<mpsc::Receiver<LlmEvent>, ProviderError> {
         self.captured.lock().unwrap().push(request.clone());
         self.inner.stream(request).await
+    }
+    fn provider_type(&self) -> ProviderType {
+        ProviderType::Anthropic
     }
 }
 

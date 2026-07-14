@@ -17,6 +17,7 @@ use aion_agent::compact::auto::{
 use aion_agent::compact::prompt::{build_compact_prompt, build_summary_content, format_compact_summary};
 use aion_agent::compact::state::CompactState;
 use aion_config::compact::CompactConfig;
+use aion_config::config::ProviderType;
 use aion_providers::{LlmProvider, ProviderError};
 use aion_types::compact::CompactTrigger;
 use aion_types::llm::{LlmEvent, LlmRequest};
@@ -77,6 +78,9 @@ impl LlmProvider for MockProvider {
             }
             Err(e) => Err(e),
         }
+    }
+    fn provider_type(&self) -> ProviderType {
+        ProviderType::Anthropic
     }
 }
 
@@ -418,6 +422,9 @@ async fn tc_2_4_20_ptl_retry_truncates_messages() {
             .await
             .ok();
             Ok(rx)
+        }
+        fn provider_type(&self) -> ProviderType {
+            ProviderType::Anthropic
         }
     }
 

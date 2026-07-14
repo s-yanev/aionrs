@@ -381,6 +381,45 @@ mod tests {
     }
 
     #[test]
+    fn image_input_capability_defaults_to_unsupported() {
+        assert_eq!(ImageInputCapability::default(), ImageInputCapability::Unsupported);
+    }
+
+    #[test]
+    fn image_input_capability_allows_images_when_supported() {
+        assert!(ImageInputCapability::Supported.allows_images(false));
+        assert!(ImageInputCapability::Supported.allows_images(true));
+    }
+
+    #[test]
+    fn image_input_capability_rejects_images_when_unsupported() {
+        assert!(!ImageInputCapability::Unsupported.allows_images(false));
+        assert!(!ImageInputCapability::Unsupported.allows_images(true));
+    }
+
+    #[test]
+    fn image_input_capability_unknown_honors_override() {
+        assert!(!ImageInputCapability::Unknown.allows_images(false));
+        assert!(ImageInputCapability::Unknown.allows_images(true));
+    }
+
+    #[test]
+    fn image_input_capability_serializes_to_snake_case() {
+        assert_eq!(
+            serde_json::to_string(&ImageInputCapability::Supported).unwrap(),
+            "\"supported\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ImageInputCapability::Unsupported).unwrap(),
+            "\"unsupported\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ImageInputCapability::Unknown).unwrap(),
+            "\"unknown\""
+        );
+    }
+
+    #[test]
     fn content_block_image_serializes_to_image_url_type() {
         let data = base64::engine::general_purpose::STANDARD.encode(b"fake");
         let block = ContentBlock::Image {

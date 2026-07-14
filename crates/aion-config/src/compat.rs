@@ -18,6 +18,13 @@ pub struct ProviderCompat {
     pub schema: SchemaCompat,
     #[serde(flatten)]
     pub reasoning: ReasoningCompat,
+    /// Per-model image input capability override.
+    ///
+    /// When set, this value is used directly by `AgentEngine::run_with_blocks`
+    /// to decide whether `ContentBlock::Image` blocks may be forwarded.
+    /// When absent, the engine falls back to provider-family defaults.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_input: Option<aion_types::message::ImageInputCapability>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
@@ -270,6 +277,7 @@ impl ProviderCompat {
             tools: ToolCompat::merge(defaults.tools, user.tools),
             schema: SchemaCompat::merge(defaults.schema, user.schema),
             reasoning: ReasoningCompat::merge(defaults.reasoning, user.reasoning),
+            image_input: user.image_input.or(defaults.image_input),
         }
     }
 

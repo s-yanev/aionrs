@@ -26,6 +26,7 @@ dependencies = [
  "aion-types",
  "anyhow",
  "async-trait",
+ "base64",
  "chrono",
  "crossterm",
  "dirs",
@@ -60,6 +61,7 @@ dependencies = [
  "aion-providers",
  "aion-skills",
  "aion-tools",
+ "aion-types",
  "anyhow",
  "clap",
  "tokio",
@@ -234,6 +236,7 @@ dependencies = [
  "aion-types",
  "anyhow",
  "async-trait",
+ "base64",
  "futures",
  "glob",
  "lru",
@@ -250,6 +253,7 @@ name = "aion-types"
 version = "0.2.4"
 dependencies = [
  "async-trait",
+ "base64",
  "chrono",
  "serde",
  "serde_json",

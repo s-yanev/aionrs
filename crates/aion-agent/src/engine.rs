@@ -1037,11 +1037,13 @@ fn project_image_input(messages: &mut [Message], capability: ImageInputCapabilit
             true
         });
 
-        if removed_image && message.content.is_empty() {
-            let text = if capability.supports_images() {
-                "[Image unavailable: the stored image payload is invalid.]"
-            } else {
-                "[Image omitted: the selected model does not support vision.]"
+        if removed_image {
+            let text = match capability {
+                ImageInputCapability::Supported => "[Image unavailable: the stored image payload is invalid.]",
+                ImageInputCapability::Unsupported => "[Image omitted: the selected model does not support vision.]",
+                ImageInputCapability::Unknown => {
+                    "[Image omitted: image-input support is unknown for the selected model.]"
+                }
             };
             message.content.push(ContentBlock::Text { text: text.to_owned() });
         }
@@ -1069,16 +1071,30 @@ impl AgentEngine {
     pub fn apply_config_update(
         &mut self,
         model: Option<String>,
+        image_input: Option<ImageInputCapability>,
         thinking: Option<String>,
         thinking_budget: Option<u32>,
         effort: Option<String>,
         compaction: Option<String>,
     ) -> Vec<String> {
         let mut changes = Vec::new();
+        let model_changed = model.is_some();
 
         if let Some(new_model) = model {
             let old = replace(&mut self.model, new_model.clone());
             changes.push(format!("model: {old} → {new_model}"));
+        }
+
+        if let Some(new_capability) = image_input {
+            let old = self.compat.image_input();
+            self.compat.image_input = Some(new_capability);
+            changes.push(format!("image input: {old:?} → {new_capability:?}"));
+        } else if model_changed {
+            let old = self.compat.image_input();
+            self.compat.image_input = None;
+            if old != ImageInputCapability::Unknown {
+                changes.push(format!("image input: {old:?} → Unknown"));
+            }
         }
 
         if let Some(thinking_str) = thinking {

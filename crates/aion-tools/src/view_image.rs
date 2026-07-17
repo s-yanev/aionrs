@@ -13,6 +13,20 @@ use crate::{Tool, ToolExecutionOutput};
 
 const MAX_IMAGE_SIZE_BYTES: u64 = 20 * 1024 * 1024;
 
+fn detect_image_media_type(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("image/png")
+    } else if bytes.starts_with(b"\xff\xd8\xff") {
+        Some("image/jpeg")
+    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        Some("image/gif")
+    } else if bytes.len() >= 12 && bytes.starts_with(b"RIFF") && &bytes[8..12] == b"WEBP" {
+        Some("image/webp")
+    } else {
+        None
+    }
+}
+
 pub struct ViewImageTool;
 
 impl ViewImageTool {
@@ -54,9 +68,16 @@ impl ViewImageTool {
         if bytes.len() as u64 > MAX_IMAGE_SIZE_BYTES {
             return Err(format!("Image exceeds the {} byte size limit", MAX_IMAGE_SIZE_BYTES));
         }
+        let detected_mime_type = detect_image_media_type(&bytes)
+            .ok_or_else(|| "File content is not a supported JPEG, PNG, GIF, or WebP image".to_owned())?;
+        if detected_mime_type != mime_type {
+            return Err(format!(
+                "Image content type {detected_mime_type} does not match extension type {mime_type}"
+            ));
+        }
 
         let image_url = ImageUrl {
-            url: format!("data:{mime_type};base64,{}", STANDARD.encode(bytes)),
+            url: format!("data:{detected_mime_type};base64,{}", STANDARD.encode(bytes)),
         };
         image_url
             .validate()
